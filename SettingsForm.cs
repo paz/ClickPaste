@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -18,6 +19,14 @@ namespace ClickPaste
         public SettingsForm()
         {
             InitializeComponent();
+
+            // Apply theme
+            ThemeHelper.ApplyTheme(this, ThemeHelper.IsDarkMode);
+
+            // Set version label
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
+            versionLabel.Text = $"v{version.Major}.{version.Minor}.{version.Build}";
+
             _methods = new RadioButton[3];
             _methods[0] = Method_Forms;
             _methods[1] = Method_AutoIt;

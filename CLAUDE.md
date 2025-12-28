@@ -8,9 +8,10 @@
 - UAC-elevated applications (when run elevated)
 - Legacy applications with restricted paste
 
-**Current Version**: 1.3.1.0
+**Current Version**: 1.4.0.0
 **Status**: Stable, production-ready
 **Framework**: .NET Framework 4.7, Windows Forms
+**Output**: Single-file executable (via Costura.Fody)
 
 ## Core Philosophy
 
@@ -56,17 +57,18 @@ GitHub Actions workflow (`.github/workflows/build.yml`) automatically:
 ClickPaste/
 ├── .github/
 │   └── workflows/
-│       └── build.yml    # GitHub Actions CI workflow
-├── Program.cs           # Entry point, TrayApplicationContext (main logic)
-├── HotKeyManager.cs     # Global hotkey registration via Win32 API
-├── Native.cs            # P/Invoke declarations for Windows API
-├── SettingsForm.cs      # Settings dialog UI and logic
-├── SettingsForm.Designer.cs  # WinForms designer (auto-generated)
+│       └── build.yml        # GitHub Actions CI workflow
+├── Program.cs               # Entry point, ThemeHelper, TrayApplicationContext
+├── HotKeyManager.cs         # Global hotkey registration via Win32 API
+├── Native.cs                # P/Invoke declarations for Windows API
+├── SettingsForm.cs          # Settings dialog UI and logic
+├── SettingsForm.Designer.cs # WinForms designer (auto-generated)
+├── FodyWeavers.xml          # Costura.Fody configuration for single-file build
 ├── Properties/
-│   ├── Settings.Designer.cs  # User settings (auto-generated)
-│   └── Resources.Designer.cs # Embedded resources (auto-generated)
-├── Resources/           # Icons (Target, TargetDark, Typing)
-└── AutoItX3*.dll        # AutoIt3 typing engine (bundled)
+│   ├── Settings.Designer.cs # User settings (auto-generated)
+│   └── Resources.Designer.cs# Embedded resources (auto-generated)
+├── Resources/               # Icons (Target, TargetDark, Typing)
+└── AutoItX3*.dll            # AutoIt3 typing engine (embedded by Costura)
 ```
 
 ### Key Components
@@ -92,14 +94,17 @@ ClickPaste/
 
 ### Typing Methods
 
-Two methods available for simulating keystrokes:
+Three methods available for simulating keystrokes:
 
 | Method | Implementation | Best For |
 |--------|---------------|----------|
 | `Forms_SendKeys` | `System.Windows.Forms.SendKeys.SendWait()` | Simple cases, standard Windows apps |
 | `AutoIt_Send` | AutoIt3 COM interop | Difficult applications, games, RDP |
+| `SendInput_Unicode` | Win32 `SendInput` with `KEYEVENTF_UNICODE` | International keyboards, Unicode characters |
 
-**Default is AutoIt** (TypeMethod=1) as it's more reliable.
+**Default is AutoIt** (TypeMethod=1) as it's most widely compatible.
+
+**SendInput Unicode** (TypeMethod=2) is recommended for international users - it bypasses keyboard layout translation entirely, solving issues #3, #15, and #29.
 
 ### Application Workflow
 
@@ -129,7 +134,7 @@ The main typing loop:
 
 | Setting | Type | Default | Purpose |
 |---------|------|---------|---------|
-| TypeMethod | int | 1 | 0=Forms.SendKeys, 1=AutoIt |
+| TypeMethod | int | 1 | 0=Forms.SendKeys, 1=AutoIt, 2=SendInput Unicode |
 | KeyDelayMS | int | 15 | Delay between keystrokes (ms) |
 | StartDelayMS | int | 0 | Delay before typing starts (ms) |
 | HotKey | string | "V" | Hotkey letter |
@@ -140,20 +145,13 @@ The main typing loop:
 
 ## Known Limitations
 
-### Unicode & International Keyboards (Issues #3, #15, #29)
+### Unicode & International Keyboards (Issues #3, #15, #29) - SOLVED
 
-Both SendKeys and AutoIt work at the **virtual key/scancode level**, not character level. This causes problems with:
+The original SendKeys and AutoIt methods work at the **virtual key/scancode level**, not character level. This caused problems with AltGr characters, dead keys, and Unicode characters.
 
-1. **AltGr-based characters** (e.g., `@`, `#` on Swiss/German layouts) - these require AltGr modifier which SendKeys doesn't handle
-2. **Dead keys** (e.g., `" + a = ä` on international layouts) - quotes trigger diacritical composition
-3. **Unicode characters** outside current keyboard layout (e.g., Lithuanian ų, ą, š)
+**Solution**: The **SendInput Unicode** typing method (TypeMethod=2) was added in v1.4.0. It uses `SendInput` with the `KEYEVENTF_UNICODE` flag to inject characters directly, bypassing keyboard layout translation entirely.
 
-**Root Cause**: The Windows SendKeys API and AutoIt.Send simulate key presses, not character insertion. Microsoft's documentation explicitly warns: *"If your application is intended for international use with a variety of keyboards, the use of Send could yield unpredictable results and should be avoided."*
-
-**Potential Solutions** (for future exploration):
-1. Use `SendInput` with `KEYEVENTF_UNICODE` flag for direct Unicode character injection
-2. Temporarily switch keyboard layout to US English before typing
-3. Hybrid approach: use Unicode injection for non-ASCII, SendKeys for ASCII
+**Recommendation**: International users should select "SendInput Unicode (international)" in Settings.
 
 ## Development Guidelines
 
@@ -176,11 +174,15 @@ Both SendKeys and AutoIt work at the **virtual key/scancode level**, not charact
 - [ ] Hotkey triggers target selection
 - [ ] Escape cancels target selection
 - [ ] Escape cancels mid-typing
-- [ ] Both typing methods work in Notepad
+- [ ] All three typing methods work in Notepad
+- [ ] SendInput Unicode works with international characters
 - [ ] Settings persist after restart
 - [ ] Large paste confirmation works
 - [ ] Dark/light theme icon selection works
+- [ ] Settings dialog adapts to dark/light mode
+- [ ] Version label displays correctly in Settings
 - [ ] Single instance enforcement works
+- [ ] Single-file build contains all dependencies
 
 ## Dependencies
 
@@ -189,8 +191,14 @@ Both SendKeys and AutoIt work at the **virtual key/scancode level**, not charact
 | Dependency | Type | Version | Purpose |
 |------------|------|---------|---------|
 | MouseKeyHook | NuGet | 5.6.0 | Global keyboard/mouse hooks |
-| AutoIt3 | Bundled DLLs | - | Alternative typing method (optional) |
+| AutoIt3 | Embedded | - | AutoIt typing method |
 | .NET Framework | Runtime | 4.7 | Application runtime |
+
+### Build Dependencies
+
+| Dependency | Type | Version | Purpose |
+|------------|------|---------|---------|
+| Costura.Fody | NuGet | 5.7.0 | Single-file build (embeds DLLs) |
 
 ### Framework References (Minimal)
 
@@ -199,19 +207,19 @@ Both SendKeys and AutoIt work at the **virtual key/scancode level**, not charact
 | System | Core .NET types |
 | System.Configuration | Settings persistence |
 | System.Core | LINQ support |
-| System.Drawing | Icon handling |
+| System.Drawing | Icon handling, theme colors |
 | System.Windows.Forms | UI framework |
 
 ### AutoIt Dependency Notes
 
-AutoIt is bundled as DLLs in the project root:
+AutoIt DLLs are embedded into the executable by Costura.Fody:
 - `AutoItX3.Assembly.dll` - .NET wrapper
 - `AutoItX3.dll` - 32-bit native
 - `AutoItX3_x64.dll` - 64-bit native
 
 **License**: Custom EULA (see `AutoIt_License.html`) - allows redistribution.
 
-**Future consideration**: With the SendInput Unicode method now available, AutoIt may become optional for users who don't need the AutoIt-specific behavior.
+**Note**: With the SendInput Unicode method now available, AutoIt is only needed for users who prefer its specific behavior with certain applications.
 
 ## Code Style
 
@@ -329,148 +337,23 @@ HotKeyManager.HotKeyPressed?.Invoke(null, e);
 
 ---
 
-## Unicode Solution Analysis
+## Changelog
 
-### The Problem
+### v1.4.0 (December 2024)
 
-Issues #3, #15, and #29 all stem from the same root cause: `SendKeys` and `AutoIt.Send()` work at the **virtual key code level**, not the character level.
+**New Features:**
+- **SendInput Unicode typing method** - Solves international keyboard issues (#3, #15, #29)
+- **Single-file build** - All DLLs embedded via Costura.Fody
+- **Dark/light mode support** - Settings dialog adapts to Windows theme
+- **Dynamic tray icon** - Updates when Windows theme changes
+- **Version label** - Displays in Settings dialog
 
-**How Current Typing Works:**
-```
-Character 'a' → VK_A key code → Target app receives keypress → Interprets as 'a'
-Character 'ą' → ??? → No direct virtual key mapping → Character lost
-```
+**Improvements:**
+- GitHub Actions CI/CD workflow
+- Conditional code signing for CI builds
+- Cleaned up unused framework references
+- Fixed AutoIt reference path for portable builds
 
-**Failure Scenarios:**
-1. **AltGr characters** (`@` on Swiss keyboard): Requires Ctrl+Alt+2, but SendKeys sends just the key
-2. **Dead keys** (`"` on international): Sent as dead key, combines with next character
-3. **Unicode** (Lithuanian `ą`): No virtual key exists, character dropped
+### v1.3.1 and earlier
 
-### The Solution: SendInput with KEYEVENTF_UNICODE
-
-Windows provides `SendInput` with the `KEYEVENTF_UNICODE` flag, which sends Unicode characters directly without keyboard layout translation:
-
-```csharp
-[DllImport("user32.dll", SetLastError = true)]
-static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
-
-[StructLayout(LayoutKind.Sequential)]
-struct INPUT {
-    public uint type;        // INPUT_KEYBOARD = 1
-    public KEYBDINPUT ki;
-}
-
-[StructLayout(LayoutKind.Sequential)]
-struct KEYBDINPUT {
-    public ushort wVk;       // 0 for Unicode
-    public ushort wScan;     // The Unicode character
-    public uint dwFlags;     // KEYEVENTF_UNICODE (0x0004)
-    public uint time;
-    public IntPtr dwExtraInfo;
-}
-```
-
-**How Unicode Input Works:**
-```
-Character 'ą' → Unicode 0x0105 → SendInput with KEYEVENTF_UNICODE → Target app receives 'ą'
-```
-
-### Implementation Strategy
-
-**Recommended Approach: Add Third Typing Method**
-
-1. Add new enum value: `TypeMethod.SendInput_Unicode`
-2. Implement new case in `StartTyping()` using P/Invoke SendInput
-3. Add radio button to settings form
-4. Default to AutoIt for backward compatibility
-
-**Advantages:**
-- Does not modify existing typing methods (stability preserved)
-- Users can choose which method works best for their environment
-- Full Unicode support without keyboard layout dependencies
-
-**Potential Risks:**
-- Some applications may not accept SendInput Unicode (rare)
-- RDP/Citrix may still block it (same as other methods)
-- Requires testing across Windows versions
-
-### Code Sketch
-
-```csharp
-// In Native.cs - add these P/Invoke declarations:
-
-public const int INPUT_KEYBOARD = 1;
-public const uint KEYEVENTF_UNICODE = 0x0004;
-public const uint KEYEVENTF_KEYUP = 0x0002;
-
-[StructLayout(LayoutKind.Sequential)]
-public struct KEYBDINPUT {
-    public ushort wVk;
-    public ushort wScan;
-    public uint dwFlags;
-    public uint time;
-    public IntPtr dwExtraInfo;
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public struct INPUT {
-    public int type;
-    public KEYBDINPUT ki;
-}
-
-[DllImport("user32.dll", SetLastError = true)]
-public static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
-
-public static void SendUnicodeChar(char c) {
-    INPUT[] inputs = new INPUT[2];
-
-    // Key down
-    inputs[0].type = INPUT_KEYBOARD;
-    inputs[0].ki.wVk = 0;
-    inputs[0].ki.wScan = c;
-    inputs[0].ki.dwFlags = KEYEVENTF_UNICODE;
-
-    // Key up
-    inputs[1].type = INPUT_KEYBOARD;
-    inputs[1].ki.wVk = 0;
-    inputs[1].ki.wScan = c;
-    inputs[1].ki.dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP;
-
-    SendInput(2, inputs, Marshal.SizeOf(typeof(INPUT)));
-}
-```
-
-```csharp
-// In Program.cs - add new case in StartTyping():
-
-case TypeMethod.SendInput_Unicode:
-    Native.SendUnicodeChar(s[0]);
-    break;
-```
-
-### Recommended Next Steps
-
-1. **Implement** the SendInput Unicode method as a third option
-2. **Test** on various applications: Notepad, Word, RDP, Citrix
-3. **Test** with various Unicode characters: Lithuanian, Chinese, emoji
-4. **Test** on Windows 10 and Windows 11
-5. **Document** which method works best for which scenarios
-6. **Release** as version 1.4.0 with new typing method option
-
----
-
-## Cleanup Completed (December 2024)
-
-### Code Cleanup
-- ~~`Program.cs:84-85` - Unused fields `_typeMethods`, `_keyDelayMS`~~ **Removed**
-- ~~`App.config:46-57` - Unused `<system.web>` section~~ **Removed**
-- ~~`ClickPaste.csproj` - Unused `System.Web.Extensions` reference~~ **Removed**
-
-### Build System Improvements
-- ~~`ClickPaste.csproj` - AutoIt HintPath pointed to system install~~ **Fixed** - now uses bundled DLL
-- ~~Unused framework references~~ **Removed**: `System.Data`, `System.Data.DataSetExtensions`, `System.Deployment`, `System.Net.Http`, `System.Xml.Linq`, `System.Xml`, `Microsoft.CSharp`
-- ~~No CI/CD support~~ **Added** GitHub Actions workflow (`.github/workflows/build.yml`)
-- ~~Code signing always required for Release~~ **Fixed** - now conditional via `/p:SkipCodeSigning=true`
-
-### Remaining Optional Cleanup
-- `Settings.cs` - Boilerplate placeholder file (kept for potential future use)
+See git history for previous changes.

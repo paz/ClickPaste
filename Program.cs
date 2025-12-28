@@ -2,6 +2,7 @@
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Media;
 using System.Reflection;
@@ -12,6 +13,114 @@ using System.Windows.Forms;
 
 namespace ClickPaste
 {
+    /// <summary>
+    /// Provides Windows dark/light theme detection and colors.
+    /// </summary>
+    public static class ThemeHelper
+    {
+        // Windows 11 dark mode colors
+        public static readonly Color DarkBackground = Color.FromArgb(32, 32, 32);      // #202020
+        public static readonly Color DarkSurface = Color.FromArgb(43, 43, 43);         // #2B2B2B
+        public static readonly Color DarkBorder = Color.FromArgb(60, 60, 60);          // #3C3C3C
+        public static readonly Color DarkText = Color.FromArgb(255, 255, 255);         // #FFFFFF
+        public static readonly Color DarkTextSecondary = Color.FromArgb(180, 180, 180);// #B4B4B4
+
+        public static event EventHandler ThemeChanged;
+
+        static ThemeHelper()
+        {
+            SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
+        }
+
+        private static void OnUserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
+        {
+            if (e.Category == UserPreferenceCategory.General)
+            {
+                ThemeChanged?.Invoke(null, EventArgs.Empty);
+            }
+        }
+
+        /// <summary>
+        /// Returns true if apps should use dark mode.
+        /// </summary>
+        public static bool IsDarkMode
+        {
+            get
+            {
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"))
+                {
+                    var value = key?.GetValue("AppsUseLightTheme")?.RegToUint();
+                    return value.HasValue && value.Value == 0;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Returns true if the system tray/taskbar is dark.
+        /// </summary>
+        public static bool IsSystemDark
+        {
+            get
+            {
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"))
+                {
+                    var value = key?.GetValue("SystemUsesLightTheme")?.RegToUint();
+                    return !value.HasValue || value.Value == 0;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Applies dark or light theme colors to a form and all its controls.
+        /// </summary>
+        public static void ApplyTheme(Control control, bool dark)
+        {
+            if (dark)
+            {
+                control.BackColor = control is Form ? DarkBackground : DarkSurface;
+                control.ForeColor = DarkText;
+
+                if (control is TextBox textBox)
+                {
+                    textBox.BackColor = DarkSurface;
+                    textBox.BorderStyle = BorderStyle.FixedSingle;
+                }
+                else if (control is GroupBox groupBox)
+                {
+                    groupBox.ForeColor = DarkText;
+                }
+                else if (control is Button button)
+                {
+                    button.BackColor = DarkSurface;
+                    button.FlatStyle = FlatStyle.Flat;
+                    button.FlatAppearance.BorderColor = DarkBorder;
+                }
+            }
+            else
+            {
+                control.BackColor = control is Form ? SystemColors.Control : SystemColors.Control;
+                control.ForeColor = SystemColors.ControlText;
+
+                if (control is TextBox textBox)
+                {
+                    textBox.BackColor = SystemColors.Window;
+                    textBox.BorderStyle = BorderStyle.Fixed3D;
+                }
+                else if (control is Button button)
+                {
+                    button.BackColor = SystemColors.Control;
+                    button.FlatStyle = FlatStyle.System;
+                    button.UseVisualStyleBackColor = true;
+                }
+            }
+
+            foreach (Control child in control.Controls)
+            {
+                ApplyTheme(child, dark);
+            }
+        }
+    }
+
     static class Program
     {
         /// <summary>
@@ -90,24 +199,15 @@ namespace ClickPaste
         public TrayApplicationContext()
         {
             StartHotKey();
-            bool darkTray = true;
-            using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"))
-            {
-                var light = key?.GetValue("SystemUsesLightTheme")?.RegToUint();
-                if (light.HasValue)
-                {
-                    darkTray = light.Value != 1;
-                }
-            }
             var traySize = SystemInformation.SmallIconSize;
 
             _notify = new NotifyIcon
             {
-                Icon = new System.Drawing.Icon(darkTray ? Properties.Resources.Target : Properties.Resources.TargetDark, traySize.Width, traySize.Height),
+                Icon = GetTrayIcon(traySize),
                 Visible = true,
-                ContextMenu = 
+                ContextMenu =
                 new ContextMenu(
-                    new MenuItem[] 
+                    new MenuItem[]
                     {
                         new MenuItem("Settings", Settings),
                         new MenuItem("-"),
@@ -117,6 +217,21 @@ namespace ClickPaste
                 Text = "ClickPaste: Click to choose a target"
             };
             _notify.MouseDown += _notify_MouseDown;
+
+            // Listen for theme changes to update tray icon
+            ThemeHelper.ThemeChanged += OnThemeChanged;
+        }
+
+        private Icon GetTrayIcon(Size size)
+        {
+            bool darkTray = ThemeHelper.IsSystemDark;
+            return new Icon(darkTray ? Properties.Resources.Target : Properties.Resources.TargetDark, size.Width, size.Height);
+        }
+
+        private void OnThemeChanged(object sender, EventArgs e)
+        {
+            var traySize = SystemInformation.SmallIconSize;
+            _notify.Icon = GetTrayIcon(traySize);
         }
         private void HotKeyManager_HotKeyPressed(object sender, HotKeyEventArgs e)
         {

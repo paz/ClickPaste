@@ -46,6 +46,7 @@
             this.label2 = new System.Windows.Forms.Label();
             this.HotKey_Letter = new System.Windows.Forms.TextBox();
             this.Done = new System.Windows.Forms.Button();
+            this.versionLabel = new System.Windows.Forms.Label();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.confirmOverActive = new System.Windows.Forms.CheckBox();
             this.label4 = new System.Windows.Forms.Label();
@@ -228,17 +229,28 @@
             this.HotKey_Letter.Size = new System.Drawing.Size(60, 20);
             this.HotKey_Letter.TabIndex = 1;
             this.HotKey_Letter.KeyDown += new System.Windows.Forms.KeyEventHandler(this.HotKey_Letter_KeyDown);
-            // 
+            //
             // Done
-            // 
+            //
             this.Done.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.Done.Location = new System.Drawing.Point(77, 408);
+            this.Done.Location = new System.Drawing.Point(77, 391);
             this.Done.Name = "Done";
             this.Done.Size = new System.Drawing.Size(75, 23);
             this.Done.TabIndex = 5;
             this.Done.Text = "Done";
             this.Done.UseVisualStyleBackColor = true;
             this.Done.Click += new System.EventHandler(this.Done_Click);
+            //
+            // versionLabel
+            //
+            this.versionLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.versionLabel.ForeColor = System.Drawing.SystemColors.GrayText;
+            this.versionLabel.Location = new System.Drawing.Point(155, 420);
+            this.versionLabel.Name = "versionLabel";
+            this.versionLabel.Size = new System.Drawing.Size(64, 13);
+            this.versionLabel.TabIndex = 6;
+            this.versionLabel.Text = "v0.0.0";
+            this.versionLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // groupBox4
             // 
@@ -309,6 +321,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoScroll = true;
             this.ClientSize = new System.Drawing.Size(231, 443);
+            this.Controls.Add(this.versionLabel);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.Done);
             this.Controls.Add(this.groupBox3);
@@ -359,5 +372,6 @@
         private System.Windows.Forms.CheckBox confirmOverActive;
         private System.Windows.Forms.RadioButton hotKeyModeType;
         private System.Windows.Forms.RadioButton hotKeyModeTarget;
+        private System.Windows.Forms.Label versionLabel;
     }
 }
