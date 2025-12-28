@@ -29,6 +29,9 @@ jobs:
     - name: Build Release
       run: msbuild ClickPaste.sln /p:Configuration=Release /p:SkipCodeSigning=true
 
+    - name: Build Release-NoAutoIt
+      run: msbuild ClickPaste.sln /p:Configuration=Release-NoAutoIt /p:SkipCodeSigning=true
+
     - name: Upload Debug artifacts
       uses: actions/upload-artifact@v4
       with:
@@ -41,4 +44,11 @@ jobs:
       with:
         name: ClickPaste-Release-${{ github.sha }}
         path: bin/Release/
+        retention-days: 30
+
+    - name: Upload Release-NoAutoIt artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ClickPaste-Release-NoAutoIt-${{ github.sha }}
+        path: bin/Release-NoAutoIt/
         retention-days: 30
