@@ -19,9 +19,10 @@ namespace ClickPaste
         public SettingsForm()
         {
             InitializeComponent();
-            _methods = new RadioButton[2];
+            _methods = new RadioButton[3];
             _methods[0] = Method_Forms;
             _methods[1] = Method_AutoIt;
+            _methods[2] = Method_Unicode;
             _modifiers = new CheckBox[4];
             _modifiers[0] = HotKey_Alt;
             _modifiers[1] = HotKey_Control;

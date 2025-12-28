@@ -70,7 +70,8 @@ namespace ClickPaste
     public enum TypeMethod
     {
         Forms_SendKeys = 0,
-        AutoIt_Send
+        AutoIt_Send,
+        SendInput_Unicode  // Direct Unicode character injection - works with international keyboards
     }
     public enum HotKeyMode
     {
@@ -81,8 +82,6 @@ namespace ClickPaste
     {
         NotifyIcon _notify = null;
         IKeyboardMouseEvents _hook = null;
-        MenuItem[] _typeMethods; // these are just sequential 0-based integers so don't need to map them like...
-        Dictionary<int, MenuItem> _keyDelayMS;// we do here
         int? _usingHotKey;
         EventHandler<HotKeyEventArgs> _currentHotKeyHandler = null;
         CancellationTokenSource _stop = new CancellationTokenSource();
@@ -260,6 +259,13 @@ namespace ClickPaste
                             case TypeMethod.Forms_SendKeys:
                                 SendKeys.SendWait(s);
                                 break;
+                            case TypeMethod.SendInput_Unicode:
+                                // Send each character as Unicode - bypasses keyboard layout
+                                foreach (char c in s)
+                                {
+                                    Native.SendUnicodeChar(c);
+                                }
+                                break;
                         }
                         Thread.Sleep(keyDelayMS);
                         if (cancel.IsCancellationRequested)
@@ -282,10 +288,12 @@ namespace ClickPaste
             {
                 if(method == TypeMethod.Forms_SendKeys && (-1 != specials.IndexOf(c)))
                 {
+                    // Forms.SendKeys requires special characters to be escaped
                     list.Add("{" + c.ToString() + "}");
                 }
                 else
                 {
+                    // AutoIt and SendInput_Unicode handle characters directly
                     list.Add(c.ToString());
                 }
             }

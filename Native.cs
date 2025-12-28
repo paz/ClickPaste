@@ -9,6 +9,66 @@ namespace ClickPaste
 {
     class Native
     {
+        #region SendInput Unicode Support (for international keyboards and Unicode characters)
+
+        public const int INPUT_KEYBOARD = 1;
+        public const uint KEYEVENTF_KEYUP = 0x0002;
+        public const uint KEYEVENTF_UNICODE = 0x0004;
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct KEYBDINPUT
+        {
+            public ushort wVk;
+            public ushort wScan;
+            public uint dwFlags;
+            public uint time;
+            public IntPtr dwExtraInfo;
+        }
+
+        // INPUT structure with explicit layout to handle union properly
+        [StructLayout(LayoutKind.Sequential)]
+        public struct INPUT
+        {
+            public int type;
+            public KEYBDINPUT ki;
+            // Padding to match the size of the largest union member (MOUSEINPUT)
+            public int padding1;
+            public int padding2;
+        }
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
+
+        /// <summary>
+        /// Sends a Unicode character directly using SendInput with KEYEVENTF_UNICODE.
+        /// This bypasses keyboard layout translation and works with any Unicode character.
+        /// </summary>
+        public static void SendUnicodeChar(char c)
+        {
+            INPUT[] inputs = new INPUT[2];
+            int inputSize = Marshal.SizeOf(typeof(INPUT));
+
+            // Key down event
+            inputs[0].type = INPUT_KEYBOARD;
+            inputs[0].ki.wVk = 0;
+            inputs[0].ki.wScan = c;
+            inputs[0].ki.dwFlags = KEYEVENTF_UNICODE;
+            inputs[0].ki.time = 0;
+            inputs[0].ki.dwExtraInfo = IntPtr.Zero;
+
+            // Key up event
+            inputs[1].type = INPUT_KEYBOARD;
+            inputs[1].ki.wVk = 0;
+            inputs[1].ki.wScan = c;
+            inputs[1].ki.dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP;
+            inputs[1].ki.time = 0;
+            inputs[1].ki.dwExtraInfo = IntPtr.Zero;
+
+            SendInput(2, inputs, inputSize);
+        }
+
+        #endregion
+
         [DllImport("user32.dll", SetLastError = true)]
         public static extern bool SetProcessDPIAware();
 
