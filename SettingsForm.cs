@@ -20,10 +20,13 @@ namespace ClickPaste
         {
             InitializeComponent();
 
-            // Apply theme (colors and dark titlebar)
+            // Apply theme (colors, icon, and dark titlebar)
             bool dark = ThemeHelper.IsDarkMode;
             ThemeHelper.ApplyTheme(this, dark);
             Native.SetDarkModeForWindow(this.Handle, dark);
+
+            // Set icon to match theme (light icon for dark mode, dark icon for light mode)
+            this.Icon = dark ? Properties.Resources.Target : Properties.Resources.TargetDark;
 
             // Set version label
             var version = Assembly.GetExecutingAssembly().GetName().Version;
