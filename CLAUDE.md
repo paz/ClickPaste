@@ -22,18 +22,41 @@
 ## Build Commands
 
 ```bash
-# Build (requires Visual Studio or MSBuild)
+# Build Debug (requires Visual Studio or MSBuild)
+msbuild ClickPaste.sln /p:Configuration=Debug
+
+# Build Release (with code signing - requires certificate)
 msbuild ClickPaste.sln /p:Configuration=Release
 
-# The solution targets .NET Framework 4.7
-# AutoIt DLLs are bundled and copied to output automatically
+# Build Release without code signing (for CI/testing)
+msbuild ClickPaste.sln /p:Configuration=Release /p:SkipCodeSigning=true
 ```
+
+**Requirements:**
+- Windows (WinForms project)
+- MSBuild / Visual Studio 2017+
+- .NET Framework 4.7 SDK
+- Code signing certificate (Release builds only, optional)
+
+## Continuous Integration
+
+GitHub Actions workflow (`.github/workflows/build.yml`) automatically:
+- Builds Debug and Release configurations on every push/PR
+- Skips code signing in CI (uses `/p:SkipCodeSigning=true`)
+- Uploads build artifacts for download
+
+**Artifacts are retained:**
+- Debug builds: 7 days
+- Release builds: 30 days
 
 ## Architecture
 
 ### File Structure
 ```
 ClickPaste/
+├── .github/
+│   └── workflows/
+│       └── build.yml    # GitHub Actions CI workflow
 ├── Program.cs           # Entry point, TrayApplicationContext (main logic)
 ├── HotKeyManager.cs     # Global hotkey registration via Win32 API
 ├── Native.cs            # P/Invoke declarations for Windows API
@@ -161,11 +184,34 @@ Both SendKeys and AutoIt work at the **virtual key/scancode level**, not charact
 
 ## Dependencies
 
-| Dependency | Version | Purpose |
-|------------|---------|---------|
-| MouseKeyHook | 5.6.0 | Global keyboard/mouse hooks (NuGet) |
-| AutoIt3 | Bundled | Alternative typing engine (COM) |
-| .NET Framework | 4.7 | Runtime |
+### Runtime Dependencies
+
+| Dependency | Type | Version | Purpose |
+|------------|------|---------|---------|
+| MouseKeyHook | NuGet | 5.6.0 | Global keyboard/mouse hooks |
+| AutoIt3 | Bundled DLLs | - | Alternative typing method (optional) |
+| .NET Framework | Runtime | 4.7 | Application runtime |
+
+### Framework References (Minimal)
+
+| Reference | Purpose |
+|-----------|---------|
+| System | Core .NET types |
+| System.Configuration | Settings persistence |
+| System.Core | LINQ support |
+| System.Drawing | Icon handling |
+| System.Windows.Forms | UI framework |
+
+### AutoIt Dependency Notes
+
+AutoIt is bundled as DLLs in the project root:
+- `AutoItX3.Assembly.dll` - .NET wrapper
+- `AutoItX3.dll` - 32-bit native
+- `AutoItX3_x64.dll` - 64-bit native
+
+**License**: Custom EULA (see `AutoIt_License.html`) - allows redistribution.
+
+**Future consideration**: With the SendInput Unicode method now available, AutoIt may become optional for users who don't need the AutoIt-specific behavior.
 
 ## Code Style
 
@@ -413,13 +459,18 @@ case TypeMethod.SendInput_Unicode:
 
 ---
 
-## Cleanup Completed
+## Cleanup Completed (December 2024)
 
-The following items were cleaned up in the December 2024 update:
-
+### Code Cleanup
 - ~~`Program.cs:84-85` - Unused fields `_typeMethods`, `_keyDelayMS`~~ **Removed**
 - ~~`App.config:46-57` - Unused `<system.web>` section~~ **Removed**
-- ~~`ClickPaste.csproj:54` - Unused `System.Web.Extensions` reference~~ **Removed**
+- ~~`ClickPaste.csproj` - Unused `System.Web.Extensions` reference~~ **Removed**
 
-**Remaining Optional Cleanup:**
+### Build System Improvements
+- ~~`ClickPaste.csproj` - AutoIt HintPath pointed to system install~~ **Fixed** - now uses bundled DLL
+- ~~Unused framework references~~ **Removed**: `System.Data`, `System.Data.DataSetExtensions`, `System.Deployment`, `System.Net.Http`, `System.Xml.Linq`, `System.Xml`, `Microsoft.CSharp`
+- ~~No CI/CD support~~ **Added** GitHub Actions workflow (`.github/workflows/build.yml`)
+- ~~Code signing always required for Release~~ **Fixed** - now conditional via `/p:SkipCodeSigning=true`
+
+### Remaining Optional Cleanup
 - `Settings.cs` - Boilerplate placeholder file (kept for potential future use)
