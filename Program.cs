@@ -77,28 +77,49 @@ namespace ClickPaste
         {
             if (dark)
             {
-                control.BackColor = control is Form ? DarkBackground : DarkSurface;
-                control.ForeColor = DarkText;
-
-                if (control is TextBox textBox)
+                if (control is Form)
                 {
-                    textBox.BackColor = DarkSurface;
+                    control.BackColor = DarkBackground;
+                    control.ForeColor = DarkText;
+                }
+                else if (control is TextBox textBox)
+                {
+                    textBox.BackColor = DarkBackground;
+                    textBox.ForeColor = DarkText;
                     textBox.BorderStyle = BorderStyle.FixedSingle;
                 }
                 else if (control is GroupBox groupBox)
                 {
+                    groupBox.BackColor = DarkBackground;
                     groupBox.ForeColor = DarkText;
                 }
                 else if (control is Button button)
                 {
                     button.BackColor = DarkSurface;
+                    button.ForeColor = DarkText;
                     button.FlatStyle = FlatStyle.Flat;
                     button.FlatAppearance.BorderColor = DarkBorder;
+                }
+                else if (control is Label label)
+                {
+                    // Labels inherit parent background
+                    label.BackColor = Color.Transparent;
+                    label.ForeColor = DarkText;
+                }
+                else if (control is RadioButton || control is CheckBox)
+                {
+                    control.BackColor = Color.Transparent;
+                    control.ForeColor = DarkText;
+                }
+                else
+                {
+                    control.BackColor = DarkBackground;
+                    control.ForeColor = DarkText;
                 }
             }
             else
             {
-                control.BackColor = control is Form ? SystemColors.Control : SystemColors.Control;
+                control.BackColor = SystemColors.Control;
                 control.ForeColor = SystemColors.ControlText;
 
                 if (control is TextBox textBox)
@@ -119,6 +140,49 @@ namespace ClickPaste
                 ApplyTheme(child, dark);
             }
         }
+
+        /// <summary>
+        /// Gets a dark mode renderer for ContextMenuStrip if dark mode is enabled.
+        /// </summary>
+        public static ToolStripRenderer GetMenuRenderer(bool dark)
+        {
+            return dark ? new DarkMenuRenderer() : new ToolStripProfessionalRenderer();
+        }
+    }
+
+    /// <summary>
+    /// Custom renderer for dark mode context menus.
+    /// </summary>
+    public class DarkMenuRenderer : ToolStripProfessionalRenderer
+    {
+        public DarkMenuRenderer() : base(new DarkMenuColors()) { }
+
+        protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
+        {
+            e.TextColor = ThemeHelper.DarkText;
+            base.OnRenderItemText(e);
+        }
+
+        protected override void OnRenderArrow(ToolStripArrowRenderEventArgs e)
+        {
+            e.ArrowColor = ThemeHelper.DarkText;
+            base.OnRenderArrow(e);
+        }
+    }
+
+    public class DarkMenuColors : ProfessionalColorTable
+    {
+        public override Color MenuItemSelected => ThemeHelper.DarkSurface;
+        public override Color MenuItemSelectedGradientBegin => ThemeHelper.DarkSurface;
+        public override Color MenuItemSelectedGradientEnd => ThemeHelper.DarkSurface;
+        public override Color MenuItemBorder => ThemeHelper.DarkBorder;
+        public override Color MenuBorder => ThemeHelper.DarkBorder;
+        public override Color ToolStripDropDownBackground => ThemeHelper.DarkBackground;
+        public override Color ImageMarginGradientBegin => ThemeHelper.DarkBackground;
+        public override Color ImageMarginGradientMiddle => ThemeHelper.DarkBackground;
+        public override Color ImageMarginGradientEnd => ThemeHelper.DarkBackground;
+        public override Color SeparatorDark => ThemeHelper.DarkBorder;
+        public override Color SeparatorLight => ThemeHelper.DarkBorder;
     }
 
     static class Program
@@ -222,6 +286,7 @@ namespace ClickPaste
         private ContextMenuStrip CreateContextMenu()
         {
             var menu = new ContextMenuStrip();
+            menu.Renderer = ThemeHelper.GetMenuRenderer(ThemeHelper.IsDarkMode);
             menu.Items.Add("Settings", null, Settings);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Exit", null, Exit);
@@ -241,7 +306,8 @@ namespace ClickPaste
             _notify.Icon = GetTrayIcon(traySize);
 
             // Update context menu theme
-            Native.SetAppDarkMode(ThemeHelper.IsDarkMode);
+            bool dark = ThemeHelper.IsDarkMode;
+            _notify.ContextMenuStrip.Renderer = ThemeHelper.GetMenuRenderer(dark);
         }
         private void HotKeyManager_HotKeyPressed(object sender, HotKeyEventArgs e)
         {
