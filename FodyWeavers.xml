@@ -8,9 +8,13 @@
     <Unmanaged64Assemblies>
       AutoItX3_x64
     </Unmanaged64Assemblies>
-    <!-- Don't create .pdb files for embedded assemblies -->
+    <!-- Don't embed debug symbols or XML docs -->
     <IncludeDebugSymbols>false</IncludeDebugSymbols>
-    <!-- Clean up the output directory -->
+    <ExcludeAssemblies>
+      AutoItX3.Assembly.xml
+    </ExcludeAssemblies>
+    <!-- Delete embedded DLLs from output -->
     <DisableCleanup>false</DisableCleanup>
+    <DeleteReferences>true</DeleteReferences>
   </Costura>
 </Weavers>

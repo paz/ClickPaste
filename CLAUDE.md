@@ -102,9 +102,9 @@ Three methods available for simulating keystrokes:
 | `AutoIt_Send` | AutoIt3 COM interop | Difficult applications, games, RDP |
 | `SendInput_Unicode` | Win32 `SendInput` with `KEYEVENTF_UNICODE` | International keyboards, Unicode characters |
 
-**Default is AutoIt** (TypeMethod=1) as it's most widely compatible.
+**Default is SendInput Unicode** (TypeMethod=2) as of v1.4.0 - it works with all keyboard layouts and bypasses keyboard translation entirely, solving issues #3, #15, and #29.
 
-**SendInput Unicode** (TypeMethod=2) is recommended for international users - it bypasses keyboard layout translation entirely, solving issues #3, #15, and #29.
+**AutoIt** (TypeMethod=1) is available as a fallback for specific applications where it works better (e.g., some games, certain RDP scenarios).
 
 ### Application Workflow
 
@@ -134,7 +134,7 @@ The main typing loop:
 
 | Setting | Type | Default | Purpose |
 |---------|------|---------|---------|
-| TypeMethod | int | 1 | 0=Forms.SendKeys, 1=AutoIt, 2=SendInput Unicode |
+| TypeMethod | int | 2 | 0=Forms.SendKeys, 1=AutoIt, 2=SendInput Unicode |
 | KeyDelayMS | int | 15 | Delay between keystrokes (ms) |
 | StartDelayMS | int | 0 | Delay before typing starts (ms) |
 | HotKey | string | "V" | Hotkey letter |

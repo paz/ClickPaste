@@ -27,7 +27,8 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>
@@ -121,12 +122,15 @@
     <None Include="Resources\Typing.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
+  <!-- Clean up XML documentation files from output -->
+  <Target Name="CleanupOutput" AfterTargets="Build">
+    <Delete Files="$(OutputPath)AutoItX3.Assembly.xml" ContinueOnError="true" />
+    <Delete Files="$(OutputPath)Gma.System.MouseKeyHook.xml" ContinueOnError="true" />
+  </Target>
+
   <!-- Code signing: disabled in CI builds (set SkipCodeSigning=true) -->
   <PropertyGroup Condition="'$(SkipCodeSigning)' != 'true'">
     <PostBuildEvent>if $(ConfigurationName) == Release $(SolutionDir)\sign.bat $(TargetDir)\$(TargetFileName) $(TargetPath)</PostBuildEvent>
-  </PropertyGroup>
-  <PropertyGroup>
-    <PreBuildEvent>
-    </PreBuildEvent>
   </PropertyGroup>
 </Project>

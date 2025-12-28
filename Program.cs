@@ -208,21 +208,22 @@ namespace ClickPaste
             {
                 Icon = GetTrayIcon(traySize),
                 Visible = true,
-                ContextMenu =
-                new ContextMenu(
-                    new MenuItem[]
-                    {
-                        new MenuItem("Settings", Settings),
-                        new MenuItem("-"),
-                        new MenuItem("Exit", Exit),
-                    }
-                ),
+                ContextMenuStrip = CreateContextMenu(),
                 Text = "ClickPaste: Click to choose a target"
             };
             _notify.MouseDown += _notify_MouseDown;
 
             // Listen for theme changes to update tray icon
             ThemeHelper.ThemeChanged += OnThemeChanged;
+        }
+
+        private ContextMenuStrip CreateContextMenu()
+        {
+            var menu = new ContextMenuStrip();
+            menu.Items.Add("Settings", null, Settings);
+            menu.Items.Add(new ToolStripSeparator());
+            menu.Items.Add("Exit", null, Exit);
+            return menu;
         }
 
         private Icon GetTrayIcon(Size size)

@@ -243,14 +243,15 @@
             //
             // versionLabel
             //
-            this.versionLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.versionLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.versionLabel.Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.versionLabel.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.versionLabel.Location = new System.Drawing.Point(155, 420);
+            this.versionLabel.Location = new System.Drawing.Point(12, 420);
             this.versionLabel.Name = "versionLabel";
-            this.versionLabel.Size = new System.Drawing.Size(64, 13);
+            this.versionLabel.Size = new System.Drawing.Size(100, 15);
             this.versionLabel.TabIndex = 6;
             this.versionLabel.Text = "v0.0.0";
-            this.versionLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.versionLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // groupBox4
             // 
