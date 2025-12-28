@@ -1,17 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Weavers xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="FodyWeavers.xsd">
   <Costura>
-    <!-- Embed all managed assemblies -->
-    <IncludeAssemblies>
-      Gma.System.MouseKeyHook
-      AutoItX3.Assembly
-    </IncludeAssemblies>
-    <!-- Embed native DLLs for AutoIt -->
+    <!-- Embed native AutoIt DLLs -->
     <Unmanaged32Assemblies>
       AutoItX3
     </Unmanaged32Assemblies>
     <Unmanaged64Assemblies>
       AutoItX3_x64
     </Unmanaged64Assemblies>
+    <!-- Don't create .pdb files for embedded assemblies -->
+    <IncludeDebugSymbols>false</IncludeDebugSymbols>
+    <!-- Clean up the output directory -->
+    <DisableCleanup>false</DisableCleanup>
   </Costura>
 </Weavers>

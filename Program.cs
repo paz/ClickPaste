@@ -144,6 +144,9 @@ namespace ClickPaste
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
+            // Enable dark mode for context menus (must be before any menus are created)
+            Native.SetAppDarkMode(ThemeHelper.IsDarkMode);
+
             // try to make sure we don't die leaving the cursor in "+" state
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
@@ -230,8 +233,12 @@ namespace ClickPaste
 
         private void OnThemeChanged(object sender, EventArgs e)
         {
+            // Update tray icon
             var traySize = SystemInformation.SmallIconSize;
             _notify.Icon = GetTrayIcon(traySize);
+
+            // Update context menu theme
+            Native.SetAppDarkMode(ThemeHelper.IsDarkMode);
         }
         private void HotKeyManager_HotKeyPressed(object sender, HotKeyEventArgs e)
         {
