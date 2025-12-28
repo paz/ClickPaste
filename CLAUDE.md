@@ -221,8 +221,7 @@ Both SendKeys and AutoIt work at the **virtual key/scancode level**, not charact
 | Location | Issue | Impact | Recommendation |
 |----------|-------|--------|----------------|
 | `Program.cs:127-129` | `Thread.Sleep(300)` in loop waiting for modifier keys | Low - only runs on hotkey | Could use smaller sleep (50ms) for faster response |
-| `Program.cs:224` | CancellationTokenSource not disposed | Low - small object | Dispose previous before creating new |
-| `Program.cs:84-85` | `_typeMethods` and `_keyDelayMS` declared but unused | None - dead code | Can be removed for cleanliness |
+| `Program.cs:87` | CancellationTokenSource not disposed | Low - small object | Dispose previous before creating new |
 
 **Verdict**: Performance is excellent for this type of utility. No critical issues.
 
@@ -243,9 +242,6 @@ Both SendKeys and AutoIt work at the **virtual key/scancode level**, not charact
 | Privilege Escalation | By Design | App can paste to elevated windows when run elevated |
 | Attack Surface | Minimal | Tray app with no exposed services |
 
-**App.config Cleanup (Optional):**
-Lines 46-57 contain unused `<system.web>` membership/roleManager sections (Visual Studio template remnants). These are harmless but could be removed.
-
 **Verdict**: No security vulnerabilities identified. The app's purpose (keystroke injection) is inherently sensitive, but it's implemented safely.
 
 ### Best Practices Assessment
@@ -259,11 +255,9 @@ Lines 46-57 contain unused `<system.web>` membership/roleManager sections (Visua
 **Minor Issues:**
 | Location | Issue | Recommendation |
 |----------|-------|----------------|
-| `Settings.cs` | Empty placeholder file | Remove or add documentation |
-| `Program.cs:84-85` | Unused fields `_typeMethods`, `_keyDelayMS` | Remove dead code |
-| `ClickPaste.csproj:54` | Reference to `System.Web.Extensions` | Remove if not needed |
+| `Settings.cs` | Boilerplate placeholder file | Could add documentation or custom logic if needed |
 
-**Verdict**: Code follows good practices. Minor cleanup opportunities exist but don't affect functionality.
+**Verdict**: Code follows good practices. Unused fields and references have been cleaned up.
 
 ### Modern Code Patterns Assessment
 
@@ -419,14 +413,13 @@ case TypeMethod.SendInput_Unicode:
 
 ---
 
-## Unused Code to Clean Up (Optional)
+## Cleanup Completed
 
-These items can be safely removed without affecting functionality:
+The following items were cleaned up in the December 2024 update:
 
-1. `Settings.cs` - Empty placeholder file
-2. `Program.cs:84` - `MenuItem[] _typeMethods` - declared but never used
-3. `Program.cs:85` - `Dictionary<int, MenuItem> _keyDelayMS` - declared but never used
-4. `App.config:46-57` - Unused `<system.web>` section
-5. `ClickPaste.csproj:54` - Unused `System.Web.Extensions` reference
+- ~~`Program.cs:84-85` - Unused fields `_typeMethods`, `_keyDelayMS`~~ **Removed**
+- ~~`App.config:46-57` - Unused `<system.web>` section~~ **Removed**
+- ~~`ClickPaste.csproj:54` - Unused `System.Web.Extensions` reference~~ **Removed**
 
-**Note**: These are cosmetic cleanups. The current code works correctly.
+**Remaining Optional Cleanup:**
+- `Settings.cs` - Boilerplate placeholder file (kept for potential future use)
