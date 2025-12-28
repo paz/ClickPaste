@@ -182,8 +182,10 @@ namespace ClickPaste
     public enum TypeMethod
     {
         Forms_SendKeys = 0,
-        AutoIt_Send,
-        SendInput_Unicode  // Direct Unicode character injection - works with international keyboards
+#if !NO_AUTOIT
+        AutoIt_Send = 1,
+#endif
+        SendInput_Unicode = 2  // Direct Unicode character injection - works with international keyboards
     }
     public enum HotKeyMode
     {
@@ -367,18 +369,21 @@ namespace ClickPaste
                     var method = (TypeMethod)Properties.Settings.Default.TypeMethod;
                     IList<string> list = PrepareKeystrokes(clip, method);
 
+#if !NO_AUTOIT
                     if (TypeMethod.AutoIt_Send == method)
                     {
                         AutoIt.AutoItX.AutoItSetOption("SendKeyDelay", 0);
                     }
+#endif
                     foreach (var s in list)
                     {
                         switch (method)
                         {
-
+#if !NO_AUTOIT
                             case TypeMethod.AutoIt_Send:
                                 AutoIt.AutoItX.Send(s, 1);
                                 break;
+#endif
                             case TypeMethod.Forms_SendKeys:
                                 SendKeys.SendWait(s);
                                 break;

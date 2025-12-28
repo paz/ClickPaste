@@ -29,10 +29,18 @@ namespace ClickPaste
             var version = Assembly.GetExecutingAssembly().GetName().Version;
             versionLabel.Text = $"v{version.Major}.{version.Minor}.{version.Build}";
 
+#if NO_AUTOIT
+            _methods = new RadioButton[2];
+            _methods[0] = Method_Forms;
+            _methods[1] = Method_Unicode;
+            // Hide AutoIt option in NoAutoIt builds
+            Method_AutoIt.Visible = false;
+#else
             _methods = new RadioButton[3];
             _methods[0] = Method_Forms;
             _methods[1] = Method_AutoIt;
             _methods[2] = Method_Unicode;
+#endif
             _modifiers = new CheckBox[4];
             _modifiers[0] = HotKey_Alt;
             _modifiers[1] = HotKey_Control;

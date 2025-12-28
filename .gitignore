@@ -1,4 +1,6 @@
 /obj
 /bin/Debug
 /bin/Release/*.pdb
+/bin/Release-NoAutoIt
 /.vs
+FodyWeavers.xml.bak

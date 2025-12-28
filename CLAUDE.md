@@ -31,7 +31,20 @@ msbuild ClickPaste.sln /p:Configuration=Release
 
 # Build Release without code signing (for CI/testing)
 msbuild ClickPaste.sln /p:Configuration=Release /p:SkipCodeSigning=true
+
+# Build Release-NoAutoIt (smaller build without AutoIt dependency)
+msbuild ClickPaste.sln /p:Configuration=Release-NoAutoIt /p:SkipCodeSigning=true
 ```
+
+### Build Configurations
+
+| Configuration | Output | AutoIt | Description |
+|--------------|--------|--------|-------------|
+| Debug | bin\Debug\ | Yes | Development build with debug symbols |
+| Release | bin\Release\ | Yes | Production build with all typing methods |
+| Release-NoAutoIt | bin\Release-NoAutoIt\ | No | Smaller build without AutoIt dependency |
+
+The **Release-NoAutoIt** configuration produces a smaller executable by excluding AutoIt. It only supports Forms.SendKeys and SendInput Unicode typing methods. The AutoIt option is hidden in Settings for this build.
 
 **Requirements:**
 - Windows (WinForms project)
@@ -57,18 +70,19 @@ GitHub Actions workflow (`.github/workflows/build.yml`) automatically:
 ClickPaste/
 ├── .github/
 │   └── workflows/
-│       └── build.yml        # GitHub Actions CI workflow
-├── Program.cs               # Entry point, ThemeHelper, TrayApplicationContext
-├── HotKeyManager.cs         # Global hotkey registration via Win32 API
-├── Native.cs                # P/Invoke declarations for Windows API
-├── SettingsForm.cs          # Settings dialog UI and logic
-├── SettingsForm.Designer.cs # WinForms designer (auto-generated)
-├── FodyWeavers.xml          # Costura.Fody configuration for single-file build
+│       └── build.yml            # GitHub Actions CI workflow
+├── Program.cs                   # Entry point, ThemeHelper, TrayApplicationContext
+├── HotKeyManager.cs             # Global hotkey registration via Win32 API
+├── Native.cs                    # P/Invoke declarations for Windows API
+├── SettingsForm.cs              # Settings dialog UI and logic
+├── SettingsForm.Designer.cs     # WinForms designer (auto-generated)
+├── FodyWeavers.xml              # Costura.Fody config (Release with AutoIt)
+├── FodyWeavers.NoAutoIt.xml     # Costura.Fody config (Release-NoAutoIt)
 ├── Properties/
-│   ├── Settings.Designer.cs # User settings (auto-generated)
-│   └── Resources.Designer.cs# Embedded resources (auto-generated)
-├── Resources/               # Icons (Target, TargetDark, Typing)
-└── AutoItX3*.dll            # AutoIt3 typing engine (embedded by Costura)
+│   ├── Settings.Designer.cs     # User settings (auto-generated)
+│   └── Resources.Designer.cs    # Embedded resources (auto-generated)
+├── Resources/                   # Icons (Target, TargetDark, Typing)
+└── AutoItX3*.dll                # AutoIt3 typing engine (embedded by Costura)
 ```
 
 ### Key Components
@@ -190,15 +204,15 @@ The original SendKeys and AutoIt methods work at the **virtual key/scancode leve
 
 | Dependency | Type | Version | Purpose |
 |------------|------|---------|---------|
-| MouseKeyHook | NuGet | 5.6.0 | Global keyboard/mouse hooks |
-| AutoIt3 | Embedded | - | AutoIt typing method |
+| MouseKeyHook | NuGet | 5.7.1 | Global keyboard/mouse hooks |
+| AutoIt3 | Embedded | 3.3.14.5 | Legacy typing method (unmaintained since 2021) |
 | .NET Framework | Runtime | 4.7 | Application runtime |
 
 ### Build Dependencies
 
 | Dependency | Type | Version | Purpose |
 |------------|------|---------|---------|
-| Costura.Fody | NuGet | 5.7.0 | Single-file build (embeds DLLs) |
+| Costura.Fody | NuGet | 6.0.0 | Single-file build (embeds DLLs) |
 
 ### Framework References (Minimal)
 
@@ -212,14 +226,16 @@ The original SendKeys and AutoIt methods work at the **virtual key/scancode leve
 
 ### AutoIt Dependency Notes
 
-AutoIt DLLs are embedded into the executable by Costura.Fody:
+AutoIt DLLs are embedded into the executable by Costura.Fody (Release configuration only):
 - `AutoItX3.Assembly.dll` - .NET wrapper
 - `AutoItX3.dll` - 32-bit native
 - `AutoItX3_x64.dll` - 64-bit native
 
 **License**: Custom EULA (see `AutoIt_License.html`) - allows redistribution.
 
-**Note**: With the SendInput Unicode method now available, AutoIt is only needed for users who prefer its specific behavior with certain applications.
+**Status**: AutoIt3 is unmaintained (last updated 2021). The **Release-NoAutoIt** build configuration excludes AutoIt entirely, producing a smaller executable. Use `NO_AUTOIT` define symbol to compile without AutoIt support.
+
+**Note**: With the SendInput Unicode method now available and set as default, AutoIt is only needed for users who prefer its specific behavior with certain applications.
 
 ## Code Style
 

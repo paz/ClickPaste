@@ -92,7 +92,7 @@
             this.Method_AutoIt.TabIndex = 2;
             this.Method_AutoIt.TabStop = true;
             this.Method_AutoIt.Tag = "1";
-            this.Method_AutoIt.Text = "AutoIt Send";
+            this.Method_AutoIt.Text = "AutoIt (legacy)";
             this.Method_AutoIt.UseVisualStyleBackColor = true;
             //
             // Method_Forms
