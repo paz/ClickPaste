@@ -55,13 +55,14 @@ The **Release-NoAutoIt** configuration produces a smaller executable by excludin
 ## Continuous Integration
 
 GitHub Actions workflow (`.github/workflows/build.yml`) automatically:
-- Builds Debug and Release configurations on every push/PR
+- Builds Debug, Release, and Release-NoAutoIt configurations on every push/PR
 - Skips code signing in CI (uses `/p:SkipCodeSigning=true`)
 - Uploads build artifacts for download
 
 **Artifacts are retained:**
 - Debug builds: 7 days
 - Release builds: 30 days
+- Release-NoAutoIt builds: 30 days
 
 ## Architecture
 
