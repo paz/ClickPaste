@@ -10,7 +10,7 @@
 
 **Current Version**: 1.4.0.0
 **Status**: Stable, production-ready
-**Framework**: .NET Framework 4.7, Windows Forms
+**Framework**: .NET Framework 4.8, Windows Forms
 **Output**: Single-file executable (via Costura.Fody)
 
 ## Core Philosophy
@@ -49,7 +49,7 @@ The **Release-NoAutoIt** configuration produces a smaller executable by excludin
 **Requirements:**
 - Windows (WinForms project)
 - MSBuild / Visual Studio 2017+
-- .NET Framework 4.7 SDK
+- .NET Framework 4.8 SDK
 - Code signing certificate (Release builds only, optional)
 
 ## Continuous Integration
@@ -206,7 +206,7 @@ The original SendKeys and AutoIt methods work at the **virtual key/scancode leve
 |------------|------|---------|---------|
 | MouseKeyHook | NuGet | 5.7.1 | Global keyboard/mouse hooks |
 | AutoIt3 | Embedded | 3.3.14.5 | Legacy typing method (unmaintained since 2021) |
-| .NET Framework | Runtime | 4.7 | Application runtime |
+| .NET Framework | Runtime | 4.8 | Application runtime |
 
 ### Build Dependencies
 
@@ -332,7 +332,7 @@ AutoIt DLLs are embedded into the executable by Costura.Fody (Release configurat
 ### Modern Code Patterns Assessment
 
 **Current State:**
-The codebase uses .NET Framework 4.7 patterns, which is appropriate for the target framework. Some modernizations are possible but must be weighed against stability.
+The codebase uses .NET Framework 4.8 patterns, which is appropriate for the target framework. Some modernizations are possible but must be weighed against stability.
 
 **Safe Modernizations (Low Risk):**
 ```csharp
