@@ -1,8 +1,7 @@
 @echo off
 setlocal EnableDelayedExpansion
 
-:: ClickPaste Installer (Batch version)
-:: For users who cannot run PowerShell scripts
+:: ClickPaste Installer
 
 set "AppName=ClickPaste"
 set "ExeName=ClickPaste.exe"
@@ -71,26 +70,12 @@ if not exist "%InstallDir%" (
 )
 
 :: Copy files
-if exist "%ScriptDir%\%ExeName%" (
-    copy /y "%ScriptDir%\%ExeName%" "%InstallDir%\" >nul
-    echo   Copied: %ExeName%
-)
-if exist "%ScriptDir%\Install.ps1" (
-    copy /y "%ScriptDir%\Install.ps1" "%InstallDir%\" >nul
-    echo   Copied: Install.ps1
-)
-if exist "%ScriptDir%\Uninstall.ps1" (
-    copy /y "%ScriptDir%\Uninstall.ps1" "%InstallDir%\" >nul
-    echo   Copied: Uninstall.ps1
-)
-if exist "%ScriptDir%\Install.cmd" (
-    copy /y "%ScriptDir%\Install.cmd" "%InstallDir%\" >nul
-    echo   Copied: Install.cmd
-)
-if exist "%ScriptDir%\Uninstall.cmd" (
-    copy /y "%ScriptDir%\Uninstall.cmd" "%InstallDir%\" >nul
-    echo   Copied: Uninstall.cmd
-)
+copy /y "%ScriptDir%\%ExeName%" "%InstallDir%\" >nul
+echo   Copied: %ExeName%
+copy /y "%ScriptDir%\Install.cmd" "%InstallDir%\" >nul
+echo   Copied: Install.cmd
+copy /y "%ScriptDir%\Uninstall.cmd" "%InstallDir%\" >nul
+echo   Copied: Uninstall.cmd
 if exist "%ScriptDir%\AutoIt_License.html" (
     copy /y "%ScriptDir%\AutoIt_License.html" "%InstallDir%\" >nul
     echo   Copied: AutoIt_License.html

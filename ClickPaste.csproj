@@ -142,12 +142,6 @@
   </ItemGroup>
   <!-- Install/Uninstall scripts - copy to Release output only -->
   <ItemGroup Condition="'$(Configuration)' == 'Release' Or '$(Configuration)' == 'Release-NoAutoIt'">
-    <Content Include="Install.ps1">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Uninstall.ps1">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="Install.cmd">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
