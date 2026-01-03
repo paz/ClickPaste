@@ -109,17 +109,40 @@ ClickPaste/
 
 ### Typing Methods
 
-Three methods available for simulating keystrokes:
+Five methods available for simulating keystrokes:
 
 | Method | Implementation | Best For |
 |--------|---------------|----------|
 | `Forms_SendKeys` | `System.Windows.Forms.SendKeys.SendWait()` | Simple cases, standard Windows apps |
 | `AutoIt_Send` | AutoIt3 COM interop | Difficult applications, games, RDP |
 | `SendInput_Unicode` | Win32 `SendInput` with `KEYEVENTF_UNICODE` | International keyboards, Unicode characters |
+| `SendInput_ScanCode` | `VkKeyScanEx` + scan codes | Browser-based VM consoles (Hyper-V, VMware) |
+| `SendInput_AltNumpad` | ALT + numpad decimal codes | VM console fallback for CJK/Unicode |
 
 **Default is SendInput Unicode** (TypeMethod=2) as of v1.4.0 - it works with all keyboard layouts and bypasses keyboard translation entirely, solving issues #3, #15, and #29.
 
 **AutoIt** (TypeMethod=1) is available as a fallback for specific applications where it works better (e.g., some games, certain RDP scenarios).
+
+#### VM Console Methods (TypeMethod=3, 4)
+
+Browser-based VM consoles (Hyper-V web console, VMware vSphere web client) capture keyboard events via JavaScript and translate them to scan codes. The `KEYEVENTF_UNICODE` method doesn't work because browsers receive `keyCode=0` for VK_PACKET events.
+
+**SendInput Scan Code** (TypeMethod=3):
+- Uses `VkKeyScanEx` to find characters on any installed keyboard layout
+- Sends via virtual key + scan code (works in browser VM consoles)
+- Falls back to `SendInput_Unicode` for unmappable characters
+- Works for: Latin, Cyrillic, Greek, Hebrew, Arabic, Thai, etc.
+
+**SendInput ALT Codes** (TypeMethod=4):
+- Uses ALT + numpad decimal sequence (e.g., ALT+65 for 'A')
+- Works for Unicode BMP characters (0-65535)
+- Falls back to `SendInput_Unicode` for characters > 65535
+- Use for: CJK characters, symbols not on any keyboard layout
+
+**Limitations in VM consoles:**
+- Emoji and characters > U+FFFF cannot be sent via scan codes
+- CJK character support depends on target application's ALT+numpad handling
+- Best results with keyboard layouts for your language installed
 
 ### Application Workflow
 
@@ -149,7 +172,7 @@ The main typing loop:
 
 | Setting | Type | Default | Purpose |
 |---------|------|---------|---------|
-| TypeMethod | int | 2 | 0=Forms.SendKeys, 1=AutoIt, 2=SendInput Unicode |
+| TypeMethod | int | 2 | 0=Forms.SendKeys, 1=AutoIt, 2=SendInput Unicode, 3=ScanCode, 4=ALT Codes |
 | KeyDelayMS | int | 15 | Delay between keystrokes (ms) |
 | StartDelayMS | int | 0 | Delay before typing starts (ms) |
 | HotKey | string | "V" | Hotkey letter |
