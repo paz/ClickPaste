@@ -317,7 +317,7 @@
             this.Method_ScanCode.Size = new System.Drawing.Size(165, 17);
             this.Method_ScanCode.TabIndex = 4;
             this.Method_ScanCode.Tag = "3";
-            this.Method_ScanCode.Text = "SendInput Scan Code (VM)";
+            this.Method_ScanCode.Text = "SendInput Scan Code";
             this.Method_ScanCode.UseVisualStyleBackColor = true;
             //
             // Method_AltNumpad
@@ -328,7 +328,7 @@
             this.Method_AltNumpad.Size = new System.Drawing.Size(168, 17);
             this.Method_AltNumpad.TabIndex = 5;
             this.Method_AltNumpad.Tag = "4";
-            this.Method_AltNumpad.Text = "SendInput ALT Codes (VM)";
+            this.Method_AltNumpad.Text = "SendInput ALT Codes";
             this.Method_AltNumpad.UseVisualStyleBackColor = true;
             //
             // SettingsForm
