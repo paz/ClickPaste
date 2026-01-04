@@ -1,0 +1,195 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.4.1) - must match AssemblyInfo.cs'
+        required: true
+        type: string
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    outputs:
+      version: ${{ steps.validate.outputs.version }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for changelog
+
+    - name: Validate version
+      id: validate
+      shell: pwsh
+      run: |
+        $inputVersion = "${{ inputs.version }}"
+
+        # Normalize version (remove leading 'v' if present)
+        $version = $inputVersion -replace '^v', ''
+
+        # Validate format
+        if ($version -notmatch '^\d+\.\d+\.\d+$') {
+          Write-Error "Invalid version format: $version. Expected: X.Y.Z"
+          exit 1
+        }
+
+        # Check AssemblyInfo.cs
+        $assemblyInfo = Get-Content "Properties/AssemblyInfo.cs" -Raw
+        $expectedPattern = "\[assembly: AssemblyVersion\(`"$version\.\d+`"\)\]"
+
+        if ($assemblyInfo -notmatch $expectedPattern) {
+          Write-Error "Version mismatch! AssemblyInfo.cs does not contain version $version.x"
+          Write-Error "Please update AssemblyInfo.cs first, then run this workflow."
+          exit 1
+        }
+
+        Write-Host "Version validated: $version"
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+
+    - name: Check tag doesn't exist
+      shell: pwsh
+      run: |
+        $version = "${{ steps.validate.outputs.version }}"
+        $tag = "v$version"
+
+        $existingTag = git tag -l $tag
+        if ($existingTag) {
+          Write-Error "Tag $tag already exists! Cannot create duplicate release."
+          exit 1
+        }
+
+        Write-Host "Tag $tag is available"
+
+  build:
+    needs: validate
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Setup NuGet
+      uses: nuget/setup-nuget@v2
+
+    - name: Restore NuGet packages
+      run: nuget restore ClickPaste.sln
+
+    - name: Build Release
+      run: msbuild ClickPaste.sln /p:Configuration=Release /p:SkipCodeSigning=true
+
+    - name: Build Release-NoAutoIt
+      run: msbuild ClickPaste.sln /p:Configuration=Release-NoAutoIt /p:SkipCodeSigning=true
+
+    - name: Run tests
+      shell: pwsh
+      run: |
+        ./tests/Test-Build.ps1 -Version "${{ needs.validate.outputs.version }}"
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+    - name: Create Release ZIP
+      shell: pwsh
+      run: |
+        $version = "${{ needs.validate.outputs.version }}"
+
+        # Create release directory
+        New-Item -ItemType Directory -Path "release" -Force
+
+        # Package Release (with AutoIt)
+        Compress-Archive -Path "bin/Release/*" -DestinationPath "release/ClickPaste-v$version.zip"
+
+        # Package Release-NoAutoIt
+        Compress-Archive -Path "bin/Release-NoAutoIt/*" -DestinationPath "release/ClickPaste-v$version-NoAutoIt.zip"
+
+        # Generate checksums
+        $checksums = @()
+        Get-ChildItem "release/*.zip" | ForEach-Object {
+          $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+          $checksums += "$hash  $($_.Name)"
+        }
+        $checksums | Out-File "release/checksums-sha256.txt" -Encoding utf8
+
+        Write-Host "Created release packages:"
+        Get-ChildItem "release/"
+
+    - name: Generate changelog
+      id: changelog
+      shell: pwsh
+      run: |
+        # Get last tag
+        $lastTag = git describe --tags --abbrev=0 2>$null
+
+        if ($lastTag) {
+          Write-Host "Generating changelog since $lastTag"
+          $commits = git log --oneline --no-decorate "$lastTag..HEAD"
+        } else {
+          Write-Host "No previous tag found, including all commits"
+          $commits = git log --oneline --no-decorate
+        }
+
+        # Format changelog
+        $changelog = $commits | ForEach-Object { "- $_" }
+        $changelogText = $changelog -join "`n"
+
+        # Save to file for release notes
+        $changelogText | Out-File "release/changelog.txt" -Encoding utf8
+
+        Write-Host "Changelog:"
+        Write-Host $changelogText
+
+    - name: Upload release artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-${{ needs.validate.outputs.version }}
+        path: release/
+        retention-days: 7
+
+  release:
+    needs: [validate, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: Download release artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: release-${{ needs.validate.outputs.version }}
+        path: release/
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ needs.validate.outputs.version }}
+        name: ClickPaste v${{ needs.validate.outputs.version }}
+        body: |
+          ## Changes
+
+          ${{ needs.build.outputs.changelog || 'See changelog.txt in release assets' }}
+
+          ## Downloads
+
+          | File | Description |
+          |------|-------------|
+          | `ClickPaste-v${{ needs.validate.outputs.version }}.zip` | Full version with AutoIt support |
+          | `ClickPaste-v${{ needs.validate.outputs.version }}-NoAutoIt.zip` | Smaller version without AutoIt |
+
+          ## Verification
+
+          SHA256 checksums are provided in `checksums-sha256.txt`.
+
+          ## Installation
+
+          1. Download and extract the ZIP
+          2. Run `Install.cmd`
+          3. Choose user or system install
+        files: |
+          release/ClickPaste-v${{ needs.validate.outputs.version }}.zip
+          release/ClickPaste-v${{ needs.validate.outputs.version }}-NoAutoIt.zip
+          release/checksums-sha256.txt
+          release/changelog.txt
+        draft: false
+        prerelease: false
