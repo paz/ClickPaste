@@ -249,7 +249,9 @@ namespace ClickPaste
 #if !NO_AUTOIT
         AutoIt_Send = 1,
 #endif
-        SendInput_Unicode = 2  // Direct Unicode character injection - works with international keyboards
+        SendInput_Unicode = 2,   // Direct Unicode character injection - works with international keyboards
+        SendInput_ScanCode = 3,  // Scan codes via VkKeyScanEx - works with VM consoles
+        SendInput_AltNumpad = 4  // ALT + numpad decimal codes - fallback for VM consoles
     }
     public enum HotKeyMode
     {
@@ -458,6 +460,20 @@ namespace ClickPaste
                                 foreach (char c in s)
                                 {
                                     Native.SendUnicodeChar(c);
+                                }
+                                break;
+                            case TypeMethod.SendInput_ScanCode:
+                                // Send via scan codes - works with VM consoles
+                                foreach (char c in s)
+                                {
+                                    Native.SendCharViaScanCode(c);
+                                }
+                                break;
+                            case TypeMethod.SendInput_AltNumpad:
+                                // Send via ALT+numpad - fallback for VM consoles
+                                foreach (char c in s)
+                                {
+                                    Native.SendCharViaAltNumpad(c);
                                 }
                                 break;
                         }
