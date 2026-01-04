@@ -217,36 +217,66 @@ namespace ClickPaste
         }
 
         /// <summary>
-        /// Sends a character using ALT + numpad decimal code.
-        /// Falls back to KEYEVENTF_UNICODE for characters > 65535.
+        /// Sends a character using ALT + numpad decimal code when possible (uses Alt+0nnn for ANSI),
+        /// otherwise falls back to KEYEVENTF_UNICODE via SendUnicodeChar.
         /// </summary>
         public static void SendCharViaAltNumpad(char c)
         {
             int code = c;
-            if (code > 65535 || code < 0)
+            // If the code point is outside BMP (or invalid), fallback to Unicode send.
+            if (code > 0xFFFF || code < 0)
             {
                 SendUnicodeChar(c);
                 return;
             }
-
+        
             byte[] numpadKeys = { VK_NUMPAD0, VK_NUMPAD1, VK_NUMPAD2, VK_NUMPAD3, VK_NUMPAD4,
                                   VK_NUMPAD5, VK_NUMPAD6, VK_NUMPAD7, VK_NUMPAD8, VK_NUMPAD9 };
-
-            string digits = code.ToString();
-
-            // Press ALT
-            SendKeyWithScanCode((byte)VK_MENU, false);
-
-            // Type each digit on numpad
-            foreach (char d in digits)
+        
+            // Try to map the character to the system ANSI code page (Encoding.Default).
+            // If it maps to a single ANSI byte and round-trips back to the same char,
+            // we can use Alt+0nnn (the leading 0 forces the Windows/ANSI code page).
+            var ansi = System.Text.Encoding.Default;
+            byte[] encoded = ansi.GetBytes(new char[] { c });
+        
+            bool canUseAltAnsi = false;
+            int ansiValue = 0;
+            if (encoded.Length == 1)
             {
-                int digit = d - '0';
-                SendKeyWithScanCode(numpadKeys[digit], false);
-                SendKeyWithScanCode(numpadKeys[digit], true);
+                // Verify it round-trips (some encodings use fallback '?')
+                char[] roundTrip = ansi.GetChars(encoded);
+                if (roundTrip.Length == 1 && roundTrip[0] == c)
+                {
+                    canUseAltAnsi = true;
+                    ansiValue = encoded[0]; // 0..255
+                }
             }
-
-            // Release ALT (this triggers the character)
-            SendKeyWithScanCode((byte)VK_MENU, true);
+        
+            if (canUseAltAnsi)
+            {
+                // Press ALT
+                SendKeyWithScanCode((byte)VK_MENU, false);
+        
+                // Send leading '0' to force Windows/ANSI code page (Alt+0nnn).
+                SendKeyWithScanCode(numpadKeys[0], false);
+                SendKeyWithScanCode(numpadKeys[0], true);
+        
+                // Send the decimal digits of the ANSI byte value (e.g. for 169 -> '1','6','9').
+                string digits = ansiValue.ToString();
+                foreach (char d in digits)
+                {
+                    int digit = d - '0';
+                    SendKeyWithScanCode(numpadKeys[digit], false);
+                    SendKeyWithScanCode(numpadKeys[digit], true);
+                }
+        
+                // Release ALT (this should produce the character).
+                SendKeyWithScanCode((byte)VK_MENU, true);
+                return;
+            }
+        
+            // If we couldn't map to ANSI (or it's >255), use the Unicode send fallback.
+            SendUnicodeChar(c);
         }
 
         #endregion
