@@ -212,8 +212,8 @@ namespace ClickPaste
                 }
             }
 
-            // Fallback to Unicode method for unmappable characters
-            SendUnicodeChar(c);
+            // Fallback to ALT codes for unmappable characters (works in VM consoles)
+            SendCharViaAltNumpad(c);
         }
 
         /// <summary>
