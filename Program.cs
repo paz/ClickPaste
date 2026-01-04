@@ -246,7 +246,9 @@ namespace ClickPaste
     public enum TypeMethod
     {
         Forms_SendKeys = 0,
+#if !NO_AUTOIT
         AutoIt_Send = 1,
+#endif
         SendInput_ScanCode = 3  // Scan codes with ALT code fallback - works everywhere including VM consoles
     }
     public enum HotKeyMode

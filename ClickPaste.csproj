@@ -36,6 +36,18 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <!-- Release-NoAutoIt: Smaller build without AutoIt dependency -->
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release-NoAutoIt|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release-NoAutoIt\</OutputPath>
+    <DefineConstants>NO_AUTOIT</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <FodyWeaversPath>FodyWeavers.NoAutoIt.xml</FodyWeaversPath>
+  </PropertyGroup>
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
@@ -45,7 +57,8 @@
   <PropertyGroup>
     <RunPostBuildEvent>OnOutputUpdated</RunPostBuildEvent>
   </PropertyGroup>
-  <ItemGroup>
+  <!-- AutoIt reference - excluded in Release-NoAutoIt builds -->
+  <ItemGroup Condition="'$(Configuration)' != 'Release-NoAutoIt'">
     <Reference Include="AutoItX3.Assembly">
       <HintPath>AutoItX3.Assembly.dll</HintPath>
     </Reference>
@@ -111,7 +124,8 @@
   <ItemGroup>
     <None Include="Resources\TargetDark.ico" />
   </ItemGroup>
-  <ItemGroup>
+  <!-- AutoIt DLLs - excluded in Release-NoAutoIt builds -->
+  <ItemGroup Condition="'$(Configuration)' != 'Release-NoAutoIt'">
     <!-- These DLLs are embedded by Costura.Fody for single-file output -->
     <None Include="AutoItX3.Assembly.dll" />
     <None Include="AutoItX3.Assembly.xml" />
@@ -120,12 +134,32 @@
     <Content Include="AutoIt_License.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <None Include="Resources\Typing.ico" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="FodyWeavers.xml" />
+    <None Include="FodyWeavers.xml" Condition="'$(Configuration)' != 'Release-NoAutoIt'" />
+    <None Include="FodyWeavers.NoAutoIt.xml" Condition="'$(Configuration)' == 'Release-NoAutoIt'" />
+    <None Include="Resources\Typing.ico" />
+  </ItemGroup>
+  <!-- Install/Uninstall scripts - copy to Release output only -->
+  <ItemGroup Condition="'$(Configuration)' == 'Release' Or '$(Configuration)' == 'Release-NoAutoIt'">
+    <Content Include="Install.cmd">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Uninstall.cmd">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
+  <!-- For NoAutoIt builds, use alternate FodyWeavers configuration -->
+  <Target Name="SwapFodyWeaversForNoAutoIt" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'Release-NoAutoIt'">
+    <Copy SourceFiles="FodyWeavers.xml" DestinationFiles="FodyWeavers.xml.bak" OverwriteReadOnlyFiles="true" />
+    <Copy SourceFiles="FodyWeavers.NoAutoIt.xml" DestinationFiles="FodyWeavers.xml" OverwriteReadOnlyFiles="true" />
+  </Target>
+  <Target Name="RestoreFodyWeaversAfterNoAutoIt" AfterTargets="Build" Condition="'$(Configuration)' == 'Release-NoAutoIt'">
+    <Copy SourceFiles="FodyWeavers.xml.bak" DestinationFiles="FodyWeavers.xml" OverwriteReadOnlyFiles="true" />
+    <Delete Files="FodyWeavers.xml.bak" />
+  </Target>
 
   <!-- Clean up XML documentation files from output -->
   <Target Name="CleanupOutput" AfterTargets="Build">
