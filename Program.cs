@@ -249,9 +249,9 @@ namespace ClickPaste
 #if !NO_AUTOIT
         AutoIt_Send = 1,
 #endif
-        SendInput_Unicode = 2,   // Direct Unicode character injection - works with international keyboards
-        SendInput_ScanCode = 3,  // Scan codes via VkKeyScanEx - works with VM consoles
-        SendInput_AltNumpad = 4  // ALT + numpad decimal codes - fallback for VM consoles
+        SendInput_Unicode = 2,   // Legacy - now same as ScanCode (kept for backwards compatibility)
+        SendInput_ScanCode = 3,  // Scan codes with ALT code fallback - works everywhere including VM consoles
+        SendInput_AltNumpad = 4  // Legacy - now same as ScanCode (kept for backwards compatibility)
     }
     public enum HotKeyMode
     {
@@ -455,25 +455,13 @@ namespace ClickPaste
                             case TypeMethod.Forms_SendKeys:
                                 SendKeys.SendWait(s);
                                 break;
-                            case TypeMethod.SendInput_Unicode:
-                                // Send each character as Unicode - bypasses keyboard layout
-                                foreach (char c in s)
-                                {
-                                    Native.SendUnicodeChar(c);
-                                }
-                                break;
+                            case TypeMethod.SendInput_Unicode:    // Legacy - now same as ScanCode
                             case TypeMethod.SendInput_ScanCode:
-                                // Send via scan codes - works with VM consoles
+                            case TypeMethod.SendInput_AltNumpad:  // Legacy - now same as ScanCode
+                                // Send via scan codes with ALT code fallback - works with VM consoles
                                 foreach (char c in s)
                                 {
                                     Native.SendCharViaScanCode(c);
-                                }
-                                break;
-                            case TypeMethod.SendInput_AltNumpad:
-                                // Send via ALT+numpad - fallback for VM consoles
-                                foreach (char c in s)
-                                {
-                                    Native.SendCharViaAltNumpad(c);
                                 }
                                 break;
                         }

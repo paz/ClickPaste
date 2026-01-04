@@ -33,20 +33,16 @@ namespace ClickPaste
             versionLabel.Text = $"v{version.Major}.{version.Minor}.{version.Build}";
 
 #if NO_AUTOIT
-            _methods = new RadioButton[4];
+            _methods = new RadioButton[2];
             _methods[0] = Method_Forms;
-            _methods[1] = Method_Unicode;
-            _methods[2] = Method_ScanCode;
-            _methods[3] = Method_AltNumpad;
+            _methods[1] = Method_ScanCode;
             // Hide AutoIt option in NoAutoIt builds
             Method_AutoIt.Visible = false;
 #else
-            _methods = new RadioButton[5];
+            _methods = new RadioButton[3];
             _methods[0] = Method_Forms;
             _methods[1] = Method_AutoIt;
-            _methods[2] = Method_Unicode;
-            _methods[3] = Method_ScanCode;
-            _methods[4] = Method_AltNumpad;
+            _methods[2] = Method_ScanCode;
 #endif
             _modifiers = new CheckBox[4];
             _modifiers[0] = HotKey_Alt;
